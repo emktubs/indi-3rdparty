@@ -101,6 +101,7 @@ option(WITH_DREAMFOCUSER "Install DreamFocuser Driver" On)
 option(WITH_AVALON "Install Avalon StarGO Driver" On)
 option(WITH_BEEFOCUS "Install Bee Focuser Driver" On)
 option(WITH_SHELYAK "Install Shelyak Spectrograph Driver" On)
+option(WITH_TIS "Install The Imaging Source Driver" On)
 
 find_package(FFmpeg)
 
@@ -220,6 +221,11 @@ endif(WITH_SPECTRACYBER)
 if (WITH_SHELYAK)
 add_subdirectory(indi-shelyak)
 endif(WITH_SHELYAK)
+
+## The Imaging Source
+if (WITH_TIS)
+add_subdirectory(indi-tis)
+endif(WITH_TIS)
 
 ## Cloud Watcher
 if (WITH_CLOUDWATCHER)
