@@ -25,6 +25,9 @@
 #include <unistd.h>
 #include <sys/time.h>
 
+#include <gst/gst.h>
+#include <tcamprop.h>
+
 #include "config.h"
 #include "indidevapi.h"
 #include "eventloop.h"
@@ -65,10 +68,164 @@ static void cleanup()
 
 void ISInit()
 {
+    
     static bool isInit = false;
     if (!isInit)
     {
-        /**********************************************************
+        gst_init(NULL, NULL);
+        
+        const gchar *nano_str;
+        guint major, minor, micro, nano;
+
+        gst_version (&major, &minor, &micro, &nano);
+
+        if (nano == 1)
+            nano_str = "(CVS)";
+        else if (nano == 2)
+            nano_str = "(Prerelease)";
+        else
+            nano_str = "";
+
+        IDLog("This program is linked against GStreamer %d.%d.%d %s\n",
+                major, minor, micro, nano_str);
+        /* create a tcambin to retrieve device information */
+        GstElement* source = gst_element_factory_make("tcambin", "source");
+
+        /* retrieve a single linked list of serials of the available devices */
+        GSList* serials = tcam_prop_get_device_serials(TCAM_PROP(source));
+
+        GSList* elem = serials;
+        if (elem)
+        {
+            for (; elem; elem = elem->next)
+            {
+                char* name;
+                char* identifier;
+                char* connection_type;
+
+                /* This fills the parameters to the likes of:
+                name='DFK Z12GP031',
+                identifier='The Imaging Source Europe GmbH-11410533'
+                connection_type='aravis'
+                The identifier is the name given by the backend
+                The connection_type identifies the backend that is used.
+                        Currently 'aravis', 'v4l2' and 'unknown' exist
+                */
+                gboolean ret = tcam_prop_get_device_info(TCAM_PROP(source),
+                                                        (gchar*) elem->data,
+                                                        &name,
+                                                        &identifier,
+                                                        &connection_type);
+
+                if (ret) // get_device_info was successfull
+                {
+                    IDLog("Model: %s Serial: %s Type: %s\n",
+                        name, (gchar*)elem->data, connection_type);
+                    
+                    GSList* names = tcam_prop_get_tcam_property_names(TCAM_PROP(source));
+
+                    for (unsigned int i = 0; i < g_slist_length(names); ++i)
+                    {
+                        char* name = (char*)g_slist_nth(names, i)->data;
+
+                        GValue value = {};
+                        GValue min = {};
+                        GValue max = {};
+                        GValue default_value = {};
+                        GValue step_size = {};
+                        GValue type = {};
+                        GValue flags = {};
+                        GValue category = {};
+                        GValue group = {};
+
+                        gboolean ret = tcam_prop_get_tcam_property(TCAM_PROP(source),
+                                                                name,
+                                                                &value,
+                                                                &min,
+                                                                &max,
+                                                                &default_value,
+                                                                &step_size,
+                                                                &type,
+                                                                &flags,
+                                                                &category,
+                                                                &group);
+
+                        if (!ret)
+                        {
+                            IDLog("Could not query property '%s'\n", name);
+                            continue;
+                        }
+
+                        const char* t = g_value_get_string(&type);
+                        if (strcmp(t, "integer") == 0)
+                        {
+                            IDLog("%s(integer) min: %d max: %d step: %d value: %d default: %d  grouping %s %s\n",
+                                name,
+                                g_value_get_int(&min), g_value_get_int(&max),
+                                g_value_get_int(&step_size),
+                                g_value_get_int(&value), g_value_get_int(&default_value),
+                                g_value_get_string(&category), g_value_get_string(&group));
+                        }
+                        else if (strcmp(t, "double") == 0)
+                        {
+                            IDLog("%s(double) min: %f max: %f step: %f value: %f default: %f  grouping %s %s\n",
+                                name,
+                                g_value_get_double(&min), g_value_get_double(&max),
+                                g_value_get_double(&step_size),
+                                g_value_get_double(&value), g_value_get_double(&default_value),
+                                g_value_get_string(&category), g_value_get_string(&group));
+                        }
+                        else if (strcmp(t, "string") == 0)
+                        {
+                            IDLog("%s(string) value: %s default: %s  grouping %s %s\n",
+                                name,
+                                g_value_get_string(&value), g_value_get_string(&default_value),
+                                g_value_get_string(&category), g_value_get_string(&group));
+                        }
+                        else if (strcmp(t, "enum") == 0)
+                        {
+                            GSList* entries = tcam_prop_get_tcam_menu_entries(TCAM_PROP(source), name);
+
+                            if (entries == NULL)
+                            {
+                                IDLog("%s returned no enumeration values.\n", name);
+                                continue;
+                            }
+
+                            IDLog("%s(enum) value: %s default: %s  grouping %s %s\n",
+                                name,
+                                g_value_get_string(&value), g_value_get_string(&default_value),
+                                g_value_get_string(&category), g_value_get_string(&group));
+                            IDLog("Entries: \n");
+                            for (unsigned int x = 0; x < g_slist_length(entries); ++x)
+                            {
+                                IDLog("\t %s\n", g_slist_nth(entries, x)->data);
+                            }
+                        }
+                        else if (strcmp(t, "boolean") == 0)
+                        {
+                            IDLog("%s(boolean) value: %s default: %s  grouping %s %s\n",
+                                name,
+                                g_value_get_boolean(&value) ? "true" : "false", g_value_get_boolean(&default_value) ? "true" : "false",
+                                g_value_get_string(&category), g_value_get_string(&group));
+                        }
+                        else if (strcmp(t, "button") == 0)
+                        {
+                            IDLog("%s(button) grouping %s %s\n", name, g_value_get_string(&category), g_value_get_string(&group));
+                        }
+                        else
+                        {
+                            IDLog("Property '%s' has type '%s' .\n", name, t);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            IDLog("No TheImagingSource cameras found.\n");
+        }
+     /**********************************************************
      *
      *  IMPORRANT: If available use CCD API function for enumeration available CCD's otherwise use code like this:
      *
@@ -87,9 +244,8 @@ void ISInit()
          }
        }
      }
-     */
 
-        /* For demo purposes we are creating two test devices */
+        // For demo purposes we are creating two test devices
         cameraCount            = 2;
         struct usb_device *dev = nullptr;
         cameras[0]             = new TISCCD(dev, deviceTypes[0].name);
@@ -97,6 +253,7 @@ void ISInit()
 
         atexit(cleanup);
         isInit = true;
+     */
     }
 }
 
@@ -189,7 +346,7 @@ TISCCD::TISCCD(DEVICE device, const char *name)
     snprintf(this->name, 32, "TIS CCD %s", name);
     setDeviceName(this->name);
 
-    setVersion(GENERIC_VERSION_MAJOR, GENERIC_VERSION_MINOR);
+    setVersion(TIS_VERSION_MAJOR, TIS_VERSION_MINOR);
 }
 
 TISCCD::~TISCCD()
