@@ -39,6 +39,7 @@ include(CMakeCommon)
 ############# TIS CCD ###############
 set(tisccd_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/tis_ccd.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/tcamcamera.cpp
 )
 
 add_executable(indi_tis_ccd ${tisccd_SRCS})

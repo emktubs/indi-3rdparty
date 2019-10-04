@@ -97,6 +97,8 @@ void ISInit()
         GSList* elem = serials;
         if (elem)
         {
+            int ii = 0;
+            IDLog("Cameras found:");
             for (; elem; elem = elem->next)
             {
                 char* name;
@@ -116,108 +118,12 @@ void ISInit()
                                                         &name,
                                                         &identifier,
                                                         &connection_type);
-
+                
                 if (ret) // get_device_info was successfull
                 {
-                    IDLog("Model: %s Serial: %s Type: %s\n",
-                        name, (gchar*)elem->data, connection_type);
-                    
-                    GSList* names = tcam_prop_get_tcam_property_names(TCAM_PROP(source));
-
-                    for (unsigned int i = 0; i < g_slist_length(names); ++i)
-                    {
-                        char* name = (char*)g_slist_nth(names, i)->data;
-
-                        GValue value = {};
-                        GValue min = {};
-                        GValue max = {};
-                        GValue default_value = {};
-                        GValue step_size = {};
-                        GValue type = {};
-                        GValue flags = {};
-                        GValue category = {};
-                        GValue group = {};
-
-                        gboolean ret = tcam_prop_get_tcam_property(TCAM_PROP(source),
-                                                                name,
-                                                                &value,
-                                                                &min,
-                                                                &max,
-                                                                &default_value,
-                                                                &step_size,
-                                                                &type,
-                                                                &flags,
-                                                                &category,
-                                                                &group);
-
-                        if (!ret)
-                        {
-                            IDLog("Could not query property '%s'\n", name);
-                            continue;
-                        }
-
-                        const char* t = g_value_get_string(&type);
-                        if (strcmp(t, "integer") == 0)
-                        {
-                            IDLog("%s(integer) min: %d max: %d step: %d value: %d default: %d  grouping %s %s\n",
-                                name,
-                                g_value_get_int(&min), g_value_get_int(&max),
-                                g_value_get_int(&step_size),
-                                g_value_get_int(&value), g_value_get_int(&default_value),
-                                g_value_get_string(&category), g_value_get_string(&group));
-                        }
-                        else if (strcmp(t, "double") == 0)
-                        {
-                            IDLog("%s(double) min: %f max: %f step: %f value: %f default: %f  grouping %s %s\n",
-                                name,
-                                g_value_get_double(&min), g_value_get_double(&max),
-                                g_value_get_double(&step_size),
-                                g_value_get_double(&value), g_value_get_double(&default_value),
-                                g_value_get_string(&category), g_value_get_string(&group));
-                        }
-                        else if (strcmp(t, "string") == 0)
-                        {
-                            IDLog("%s(string) value: %s default: %s  grouping %s %s\n",
-                                name,
-                                g_value_get_string(&value), g_value_get_string(&default_value),
-                                g_value_get_string(&category), g_value_get_string(&group));
-                        }
-                        else if (strcmp(t, "enum") == 0)
-                        {
-                            GSList* entries = tcam_prop_get_tcam_menu_entries(TCAM_PROP(source), name);
-
-                            if (entries == NULL)
-                            {
-                                IDLog("%s returned no enumeration values.\n", name);
-                                continue;
-                            }
-
-                            IDLog("%s(enum) value: %s default: %s  grouping %s %s\n",
-                                name,
-                                g_value_get_string(&value), g_value_get_string(&default_value),
-                                g_value_get_string(&category), g_value_get_string(&group));
-                            IDLog("Entries: \n");
-                            for (unsigned int x = 0; x < g_slist_length(entries); ++x)
-                            {
-                                IDLog("\t %s\n", g_slist_nth(entries, x)->data);
-                            }
-                        }
-                        else if (strcmp(t, "boolean") == 0)
-                        {
-                            IDLog("%s(boolean) value: %s default: %s  grouping %s %s\n",
-                                name,
-                                g_value_get_boolean(&value) ? "true" : "false", g_value_get_boolean(&default_value) ? "true" : "false",
-                                g_value_get_string(&category), g_value_get_string(&group));
-                        }
-                        else if (strcmp(t, "button") == 0)
-                        {
-                            IDLog("%s(button) grouping %s %s\n", name, g_value_get_string(&category), g_value_get_string(&group));
-                        }
-                        else
-                        {
-                            IDLog("Property '%s' has type '%s' .\n", name, t);
-                        }
-                    }
+                    ii++;
+                    IDLog("%d: Model: %s Serial: %s Type: %s\n",
+                        ii, name, (gchar*)elem->data, connection_type); 
                 }
             }
         }

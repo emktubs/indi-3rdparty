@@ -27,6 +27,8 @@
 #include <indiccd.h>
 #include <iostream>
 
+#include "tcamcamera.h"
+
 using namespace std;
 
 #define DEVICE struct usb_device *
@@ -63,6 +65,11 @@ class TISCCD : public INDI::CCD
     virtual IPState GuideWest(uint32_t ms);
 
   private:
+
+    // SerialNumber
+    IText SerialNumberS[1] = {};
+    ITextVectorProperty SerialNumberSP;
+      
     DEVICE device;
     char name[32];
 
