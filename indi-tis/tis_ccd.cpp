@@ -68,12 +68,14 @@ static void cleanup()
 
 void ISInit()
 {
-    
+
     static bool isInit = false;
     if (!isInit)
     {
-        gst_init(NULL, NULL);
-        
+        if (!gst_is_initialized())
+            gst_init(NULL, NULL);
+
+
         const gchar *nano_str;
         guint major, minor, micro, nano;
 
@@ -86,80 +88,27 @@ void ISInit()
         else
             nano_str = "";
 
-        IDLog("This program is linked against GStreamer %d.%d.%d %s\n",
+        DEBUGF(INDI::Logger::DBG_DEBUG, "This program is linked against GStreamer %d.%d.%d %s\n",
                 major, minor, micro, nano_str);
-        /* create a tcambin to retrieve device information */
-        GstElement* source = gst_element_factory_make("tcambin", "source");
 
-        /* retrieve a single linked list of serials of the available devices */
-        GSList* serials = tcam_prop_get_device_serials(TCAM_PROP(source));
-
-        GSList* elem = serials;
-        if (elem)
+        std::vector<gsttcam::CameraInfo> camera_list = gsttcam::get_device_list();
+        if ( !camera_list.empty() )
         {
-            int ii = 0;
-            IDLog("Cameras found:");
-            for (; elem; elem = elem->next)
+            cameraCount = static_cast<int>(camera_list.size());
+            for (int i = 0; i < cameraCount; i++)
             {
-                char* name;
-                char* identifier;
-                char* connection_type;
-
-                /* This fills the parameters to the likes of:
-                name='DFK Z12GP031',
-                identifier='The Imaging Source Europe GmbH-11410533'
-                connection_type='aravis'
-                The identifier is the name given by the backend
-                The connection_type identifies the backend that is used.
-                        Currently 'aravis', 'v4l2' and 'unknown' exist
-                */
-                gboolean ret = tcam_prop_get_device_info(TCAM_PROP(source),
-                                                        (gchar*) elem->data,
-                                                        &name,
-                                                        &identifier,
-                                                        &connection_type);
-                
-                if (ret) // get_device_info was successfull
-                {
-                    ii++;
-                    IDLog("%d: Model: %s Serial: %s Type: %s\n",
-                        ii, name, (gchar*)elem->data, connection_type); 
-                }
+                DEBUGF(INDI::Logger::DBG_SESSION, "No: %d, Model: %s Serial: %s Type: %s\n"
+                    , i, camera_list[i].name.c_str(), camera_list[i].serial.c_str(), camera_list[i].connection_type.c_str());
+                cameras[i] = new TISCCD(camera_list[i].name, camera_list[i].serial);
             }
         }
         else
         {
-            IDLog("No TheImagingSource cameras found.\n");
+            IDLog("No cameras found.\n");
         }
-     /**********************************************************
-     *
-     *  IMPORRANT: If available use CCD API function for enumeration available CCD's otherwise use code like this:
-     *
-     **********************************************************
 
-     cameraCount = 0;
-     for (struct usb_bus *bus = usb_get_busses(); bus && cameraCount < MAX_DEVICES; bus = bus->next) {
-       for (struct usb_device *dev = bus->devices; dev && cameraCount < MAX_DEVICES; dev = dev->next) {
-         int vid = dev->descriptor.idVendor;
-         int pid = dev->descriptor.idProduct;
-         for (int i = 0; deviceTypes[i].pid; i++) {
-           if (vid == deviceTypes[i].vid && pid == deviceTypes[i].pid) {
-             cameras[i] = new TISCCD(dev, deviceTypes[i].name);
-             break;
-           }
-         }
-       }
-     }
-
-        // For demo purposes we are creating two test devices
-        cameraCount            = 2;
-        struct usb_device *dev = nullptr;
-        cameras[0]             = new TISCCD(dev, deviceTypes[0].name);
-        cameras[1]             = new TISCCD(dev, deviceTypes[1].name);
-
-        atexit(cleanup);
-        isInit = true;
-     */
+        if (cameraCount > 0)
+            isInit = true;
     }
 }
 
@@ -246,7 +195,7 @@ void ISSnoopDevice(XMLEle *root)
     }
 }
 
-TISCCD::TISCCD(DEVICE device, const char *name)
+TISCCD::TISCCD(std::string name, std::string serial)
 {
     this->device = device;
     snprintf(this->name, 32, "TIS CCD %s", name);

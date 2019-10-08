@@ -36,7 +36,7 @@ using namespace std;
 class TISCCD : public INDI::CCD
 {
   public:
-    TISCCD(DEVICE device, const char *name);
+    TISCCD(std::string name, std::string serial);
     virtual ~TISCCD();
 
     const char *getDefaultName();
@@ -66,10 +66,13 @@ class TISCCD : public INDI::CCD
 
   private:
 
+    // TCAMCAMERA
+    gsttcam::TcamCamera * hCam = { nullptr };
+
     // SerialNumber
     IText SerialNumberS[1] = {};
     ITextVectorProperty SerialNumberSP;
-      
+
     DEVICE device;
     char name[32];
 
