@@ -9,7 +9,7 @@ include(GNUInstallDirs)
 set (TIS_VERSION_MAJOR 1)
 set (TIS_VERSION_MINOR 0)
 
-find_package(GStreamer REQUIRED QUIET)
+#find_package(GStreamer REQUIRED)
 find_package(CFITSIO REQUIRED)
 find_package(INDI REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -18,6 +18,7 @@ find_package(GObject REQUIRED QUIET)
 find_package(GObjectIntrospection REQUIRED QUIET)
 
 find_package(PkgConfig REQUIRED)
+pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0)
 pkg_check_modules(TCAMLIB tcam)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h )
