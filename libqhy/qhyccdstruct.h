@@ -63,6 +63,7 @@ typedef uint64_t QHYDWORD;
 
 
 
+#define		MAX_READMODE_NUMBER			8
 
 
 /**
@@ -245,6 +246,15 @@ enum CodecID
   H261_CODEC
 };
 
+typedef struct _QHYCamReadModeInfo
+{
+  const char *name;
+  const char *RMName[MAX_READMODE_NUMBER];
+  int32_t number;
+}
+QHYCamReadModeInfo;
+
+
 typedef struct _QHYCamMinMaxStepValue
 {
   const char *name;
@@ -268,7 +278,7 @@ QHYGetImageParam;
 
 
 #if CALLBACK_MODE_SUPPORT
-typedef uint32_t  (*QHYCCDProcCallBack) (void *handle,
+typedef QHYDWORD  (*QHYCCDProcCallBack) (void *handle,
     QHYDWORD message,
     QHYDWORD wParam,
     QHYDWORD lParam);
