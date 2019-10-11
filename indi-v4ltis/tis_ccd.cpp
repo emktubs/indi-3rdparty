@@ -26,13 +26,13 @@
 #include <sys/time.h>
 
 #include <gst/gst.h>
-#include <tcamprop.h>
+// #include <tcamprop.h>
 
 #include "config.h"
 #include "indidevapi.h"
 #include "eventloop.h"
 
-#include "tis_ccd.h"
+#include "v4ltis_ccd.h"
 
 #define MAX_CCD_TEMP   45   /* Max CCD temperature */
 #define MIN_CCD_TEMP   -55  /* Min CCD temperature */
@@ -43,7 +43,7 @@
 #define MAX_DEVICES    20   /* Max device cameraCount */
 
 static int cameraCount;
-static TISCCD *cameras[MAX_DEVICES];
+static V4LTISCCD *cameras[MAX_DEVICES];
 
 /**********************************************************
  *
@@ -72,43 +72,43 @@ void ISInit()
     static bool isInit = false;
     if (!isInit)
     {
-        if (!gst_is_initialized())
-            gst_init(NULL, NULL);
-
-
-        const gchar *nano_str;
-        guint major, minor, micro, nano;
-
-        gst_version (&major, &minor, &micro, &nano);
-
-        if (nano == 1)
-            nano_str = "(CVS)";
-        else if (nano == 2)
-            nano_str = "(Prerelease)";
-        else
-            nano_str = "";
-
-        DEBUGF(INDI::Logger::DBG_DEBUG, "This program is linked against GStreamer %d.%d.%d %s\n",
-                major, minor, micro, nano_str);
-
-        std::vector<gsttcam::CameraInfo> camera_list = gsttcam::get_device_list();
-        if ( !camera_list.empty() )
-        {
-            cameraCount = static_cast<int>(camera_list.size());
-            for (int i = 0; i < cameraCount; i++)
-            {
-                DEBUGF(INDI::Logger::DBG_SESSION, "No: %d, Model: %s Serial: %s Type: %s\n"
-                    , i, camera_list[i].name.c_str(), camera_list[i].serial.c_str(), camera_list[i].connection_type.c_str());
-                cameras[i] = new TISCCD(camera_list[i].name, camera_list[i].serial);
-            }
-        }
-        else
-        {
-            IDLog("No cameras found.\n");
-        }
-
-        if (cameraCount > 0)
-            isInit = true;
+//         if (!gst_is_initialized())
+//             gst_init(NULL, NULL);
+// 
+// 
+//         const gchar *nano_str;
+//         guint major, minor, micro, nano;
+// 
+//         gst_version (&major, &minor, &micro, &nano);
+// 
+//         if (nano == 1)
+//             nano_str = "(CVS)";
+//         else if (nano == 2)
+//             nano_str = "(Prerelease)";
+//         else
+//             nano_str = "";
+// 
+//         DEBUGF(INDI::Logger::DBG_DEBUG, "This program is linked against GStreamer %d.%d.%d %s\n",
+//                 major, minor, micro, nano_str);
+// 
+//         std::vector<gsttcam::CameraInfo> camera_list = gsttcam::get_device_list();
+//         if ( !camera_list.empty() )
+//         {
+//             cameraCount = static_cast<int>(camera_list.size());
+//             for (int i = 0; i < cameraCount; i++)
+//             {
+//                 DEBUGF(INDI::Logger::DBG_SESSION, "No: %d, Model: %s Serial: %s Type: %s\n"
+//                     , i, camera_list[i].name.c_str(), camera_list[i].serial.c_str(), camera_list[i].connection_type.c_str());
+//                 cameras[i] = new V4LTISCCD(camera_list[i].name, camera_list[i].serial);
+//             }
+//         }
+//         else
+//         {
+//             IDLog("No cameras found.\n");
+//         }
+// 
+//         if (cameraCount > 0)
+//             isInit = true;
     }
 }
 
@@ -117,7 +117,7 @@ void ISGetProperties(const char *dev)
     ISInit();
     for (int i = 0; i < cameraCount; i++)
     {
-        TISCCD *camera = cameras[i];
+        V4LTISCCD *camera = cameras[i];
         if (dev == nullptr || !strcmp(dev, camera->name))
         {
             camera->ISGetProperties(dev);
@@ -132,7 +132,7 @@ void ISNewSwitch(const char *dev, const char *name, ISState *states, char *names
     ISInit();
     for (int i = 0; i < cameraCount; i++)
     {
-        TISCCD *camera = cameras[i];
+        V4LTISCCD *camera = cameras[i];
         if (dev == nullptr || !strcmp(dev, camera->name))
         {
             camera->ISNewSwitch(dev, name, states, names, num);
@@ -147,7 +147,7 @@ void ISNewText(const char *dev, const char *name, char *texts[], char *names[], 
     ISInit();
     for (int i = 0; i < cameraCount; i++)
     {
-        TISCCD *camera = cameras[i];
+        V4LTISCCD *camera = cameras[i];
         if (dev == nullptr || !strcmp(dev, camera->name))
         {
             camera->ISNewText(dev, name, texts, names, num);
@@ -162,7 +162,7 @@ void ISNewNumber(const char *dev, const char *name, double values[], char *names
     ISInit();
     for (int i = 0; i < cameraCount; i++)
     {
-        TISCCD *camera = cameras[i];
+        V4LTISCCD *camera = cameras[i];
         if (dev == nullptr || !strcmp(dev, camera->name))
         {
             camera->ISNewNumber(dev, name, values, names, num);
@@ -190,30 +190,30 @@ void ISSnoopDevice(XMLEle *root)
 
     for (int i = 0; i < cameraCount; i++)
     {
-        TISCCD *camera = cameras[i];
+        V4LTISCCD *camera = cameras[i];
         camera->ISSnoopDevice(root);
     }
 }
 
-TISCCD::TISCCD(std::string name, std::string serial)
+V4LTISCCD::V4LTISCCD(std::string name, std::string serial)
 {
     this->device = device;
     snprintf(this->name, 32, "TIS CCD %s", name);
     setDeviceName(this->name);
 
-    setVersion(TIS_VERSION_MAJOR, TIS_VERSION_MINOR);
+    setVersion(V4LTIS_VERSION_MAJOR, V4LTIS_VERSION_MINOR);
 }
 
-TISCCD::~TISCCD()
+V4LTISCCD::~V4LTISCCD()
 {
 }
 
-const char *TISCCD::getDefaultName()
+const char *V4LTISCCD::getDefaultName()
 {
     return "TIS CCD";
 }
 
-bool TISCCD::initProperties()
+bool V4LTISCCD::initProperties()
 {
     // Init parent properties first
     INDI::CCD::initProperties();
@@ -226,12 +226,12 @@ bool TISCCD::initProperties()
     return true;
 }
 
-void TISCCD::ISGetProperties(const char *dev)
+void V4LTISCCD::ISGetProperties(const char *dev)
 {
     INDI::CCD::ISGetProperties(dev);
 }
 
-bool TISCCD::updateProperties()
+bool V4LTISCCD::updateProperties()
 {
     INDI::CCD::updateProperties();
 
@@ -250,7 +250,7 @@ bool TISCCD::updateProperties()
     return true;
 }
 
-bool TISCCD::Connect()
+bool V4LTISCCD::Connect()
 {
     LOG_INFO("Attempting to find the The Imaging Source CCD...");
 
@@ -273,7 +273,7 @@ bool TISCCD::Connect()
     return true;
 }
 
-bool TISCCD::Disconnect()
+bool V4LTISCCD::Disconnect()
 {
     /**********************************************************
    *
@@ -292,7 +292,7 @@ bool TISCCD::Disconnect()
     return true;
 }
 
-bool TISCCD::setupParams()
+bool V4LTISCCD::setupParams()
 {
     float x_pixel_size, y_pixel_size;
     int bit_depth = 16;
@@ -358,7 +358,7 @@ bool TISCCD::setupParams()
     return true;
 }
 
-int TISCCD::SetTemperature(double temperature)
+int V4LTISCCD::SetTemperature(double temperature)
 {
     // If there difference, for example, is less than 0.1 degrees, let's immediately return OK.
     if (fabs(temperature - TemperatureN[0].value) < TEMP_THRESHOLD)
@@ -379,7 +379,7 @@ int TISCCD::SetTemperature(double temperature)
     return 0;
 }
 
-bool TISCCD::StartExposure(float duration)
+bool V4LTISCCD::StartExposure(float duration)
 {
     if (duration < minDuration)
     {
@@ -420,7 +420,7 @@ bool TISCCD::StartExposure(float duration)
     return true;
 }
 
-bool TISCCD::AbortExposure()
+bool V4LTISCCD::AbortExposure()
 {
     /**********************************************************
    *
@@ -439,7 +439,7 @@ bool TISCCD::AbortExposure()
     return true;
 }
 
-bool TISCCD::UpdateCCDFrameType(INDI::CCDChip::CCD_FRAME fType)
+bool V4LTISCCD::UpdateCCDFrameType(INDI::CCDChip::CCD_FRAME fType)
 {
     INDI::CCDChip::CCD_FRAME imageFrameType = PrimaryCCD.getFrameType();
 
@@ -492,7 +492,7 @@ bool TISCCD::UpdateCCDFrameType(INDI::CCDChip::CCD_FRAME fType)
     return true;
 }
 
-bool TISCCD::UpdateCCDFrame(int x, int y, int w, int h)
+bool V4LTISCCD::UpdateCCDFrame(int x, int y, int w, int h)
 {
     /* Add the X and Y offsets */
     long x_1 = x;
@@ -542,7 +542,7 @@ bool TISCCD::UpdateCCDFrame(int x, int y, int w, int h)
     return true;
 }
 
-bool TISCCD::UpdateCCDBin(int binx, int biny)
+bool V4LTISCCD::UpdateCCDBin(int binx, int biny)
 {
     /**********************************************************
    *
@@ -562,7 +562,7 @@ bool TISCCD::UpdateCCDBin(int binx, int biny)
     return UpdateCCDFrame(PrimaryCCD.getSubX(), PrimaryCCD.getSubY(), PrimaryCCD.getSubW(), PrimaryCCD.getSubH());
 }
 
-float TISCCD::CalcTimeLeft()
+float V4LTISCCD::CalcTimeLeft()
 {
     double timesince;
     double timeleft;
@@ -579,7 +579,7 @@ float TISCCD::CalcTimeLeft()
 
 /* Downloads the image from the CCD.
  N.B. No processing is done on the image */
-int TISCCD::grabImage()
+int V4LTISCCD::grabImage()
 {
     uint8_t *image = PrimaryCCD.getFrameBuffer();
     int width      = PrimaryCCD.getSubW() / PrimaryCCD.getBinX() * PrimaryCCD.getBPP() / 8;
@@ -605,7 +605,7 @@ int TISCCD::grabImage()
     return 0;
 }
 
-void TISCCD::TimerHit()
+void V4LTISCCD::TimerHit()
 {
     int timerID = -1;
     long timeleft;
@@ -725,7 +725,7 @@ void TISCCD::TimerHit()
     return;
 }
 
-IPState TISCCD::GuideNorth(uint32_t ms)
+IPState V4LTISCCD::GuideNorth(uint32_t ms)
 {
     INDI_UNUSED(ms);
     /**********************************************************
@@ -749,7 +749,7 @@ IPState TISCCD::GuideNorth(uint32_t ms)
     return IPS_OK;
 }
 
-IPState TISCCD::GuideSouth(uint32_t ms)
+IPState V4LTISCCD::GuideSouth(uint32_t ms)
 {
     INDI_UNUSED(ms);
     /**********************************************************
@@ -773,7 +773,7 @@ IPState TISCCD::GuideSouth(uint32_t ms)
     return IPS_OK;
 }
 
-IPState TISCCD::GuideEast(uint32_t ms)
+IPState V4LTISCCD::GuideEast(uint32_t ms)
 {
     INDI_UNUSED(ms);
     /**********************************************************
@@ -797,7 +797,7 @@ IPState TISCCD::GuideEast(uint32_t ms)
     return IPS_OK;
 }
 
-IPState TISCCD::GuideWest(uint32_t ms)
+IPState V4LTISCCD::GuideWest(uint32_t ms)
 {
     INDI_UNUSED(ms);
     /**********************************************************

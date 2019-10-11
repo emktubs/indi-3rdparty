@@ -21,23 +21,22 @@
 
  */
 
-#ifndef TIS_CCD_H
-#define TIS_CCD_H
+#ifndef V4LTIS_CCD_H
+#define V4LTIS_CCD_H
 
 #include <indiccd.h>
+#include <v4l2driver.h>
 #include <iostream>
-
-#include "tcamcamera.h"
 
 using namespace std;
 
 #define DEVICE struct usb_device *
 
-class TISCCD : public INDI::CCD
+class V4LTISCCD : public V4L2_Driver
 {
   public:
-    TISCCD(std::string name, std::string serial);
-    virtual ~TISCCD();
+    V4LTISCCD(std::string name, std::string serial);
+    virtual ~V4LTISCCD();
 
     const char *getDefaultName();
 
@@ -65,9 +64,6 @@ class TISCCD : public INDI::CCD
     virtual IPState GuideWest(uint32_t ms);
 
   private:
-
-    // TCAMCAMERA
-    gsttcam::TcamCamera * hCam = { nullptr };
 
     // SerialNumber
     IText SerialNumberS[1] = {};
