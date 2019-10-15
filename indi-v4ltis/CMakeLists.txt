@@ -11,7 +11,7 @@ set (V4LTIS_VERSION_MINOR 0)
 
 #find_package(GStreamer REQUIRED)
 find_package(CFITSIO REQUIRED)
-find_package(INDI REQUIRED)
+find_package(INDI REQUIRED v4l driver)
 find_package(ZLIB REQUIRED)
 # find_package(GLIB2 REQUIRED QUIET)
 # find_package(GObject REQUIRED QUIET)
