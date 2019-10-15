@@ -306,6 +306,7 @@ indidebug("DRIVERS_FOUND")
 indidebug("CLIENT_FOUND")
 indidebug("QT5CLIENT_FOUND")
 indidebug("LX200_FOUND")
+indidebug("V4L_FOUND")
 
 # Linking
 indidebug("INCLUDE_DIR")

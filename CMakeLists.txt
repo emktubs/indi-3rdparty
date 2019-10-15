@@ -230,7 +230,7 @@ endif(WITH_SHELYAK)
 
 ## The Imaging Source
 if (WITH_TIS)
-add_subdirectory(indi-tis)
+add_subdirectory(indi-v4ltis)
 endif(WITH_TIS)
 
 ## Cloud Watcher
