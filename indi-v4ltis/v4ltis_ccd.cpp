@@ -1,5 +1,5 @@
 /*
- TIS CCD
+ V4LTIS CCD
  Copyright (C) 2012 Jasem Mutlaq (mutlaqja@ikarustech.com)
 
  Multiple device support Copyright (C) 2013 Peter Polakovic (peter.polakovic@cloudmakers.eu)
@@ -25,7 +25,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-#include <gst/gst.h>
+// #include <gst/gst.h>
 // #include <tcamprop.h>
 
 #include "config.h"
@@ -45,18 +45,12 @@
 static int cameraCount;
 static V4LTISCCD *cameras[MAX_DEVICES];
 
-/**********************************************************
- *
- *  IMPORRANT: List supported camera models in initializer of deviceTypes structure
- *
- **********************************************************/
-
-static struct
-{
-    int vid;
-    int pid;
-    const char *name;
-} deviceTypes[] = { { 0x0001, 0x0001, "Model 1" }, { 0x0001, 0x0002, "Model 2" }, { 0, 0, nullptr } };
+// static struct
+// {
+//     int vid;
+//     int pid;
+//     const char *name;
+// } deviceTypes[] = { { 0x0001, 0x0001, "Model 1" }, { 0x0001, 0x0002, "Model 2" }, { 0, 0, nullptr } };
 
 static void cleanup()
 {
@@ -72,43 +66,8 @@ void ISInit()
     static bool isInit = false;
     if (!isInit)
     {
-//         if (!gst_is_initialized())
-//             gst_init(NULL, NULL);
-// 
-// 
-//         const gchar *nano_str;
-//         guint major, minor, micro, nano;
-// 
-//         gst_version (&major, &minor, &micro, &nano);
-// 
-//         if (nano == 1)
-//             nano_str = "(CVS)";
-//         else if (nano == 2)
-//             nano_str = "(Prerelease)";
-//         else
-//             nano_str = "";
-// 
-//         DEBUGF(INDI::Logger::DBG_DEBUG, "This program is linked against GStreamer %d.%d.%d %s\n",
-//                 major, minor, micro, nano_str);
-// 
-//         std::vector<gsttcam::CameraInfo> camera_list = gsttcam::get_device_list();
-//         if ( !camera_list.empty() )
-//         {
-//             cameraCount = static_cast<int>(camera_list.size());
-//             for (int i = 0; i < cameraCount; i++)
-//             {
-//                 DEBUGF(INDI::Logger::DBG_SESSION, "No: %d, Model: %s Serial: %s Type: %s\n"
-//                     , i, camera_list[i].name.c_str(), camera_list[i].serial.c_str(), camera_list[i].connection_type.c_str());
-//                 cameras[i] = new V4LTISCCD(camera_list[i].name, camera_list[i].serial);
-//             }
-//         }
-//         else
-//         {
-//             IDLog("No cameras found.\n");
-//         }
-// 
-//         if (cameraCount > 0)
-//             isInit = true;
+        cameraCount = 1;
+        cameras[0] = new V4LTISCCD();
     }
 }
 
@@ -195,12 +154,8 @@ void ISSnoopDevice(XMLEle *root)
     }
 }
 
-V4LTISCCD::V4LTISCCD(std::string name, std::string serial)
+V4LTISCCD::V4LTISCCD()  : V4L2_Driver()
 {
-    this->device = device;
-    snprintf(this->name, 32, "TIS CCD %s", name);
-    setDeviceName(this->name);
-
     setVersion(V4LTIS_VERSION_MAJOR, V4LTIS_VERSION_MINOR);
 }
 
@@ -210,30 +165,41 @@ V4LTISCCD::~V4LTISCCD()
 
 const char *V4LTISCCD::getDefaultName()
 {
-    return "TIS CCD";
+    return "V4LTIS CCD";
 }
 
 bool V4LTISCCD::initProperties()
 {
     // Init parent properties first
-    INDI::CCD::initProperties();
-
-    uint32_t cap = CCD_CAN_ABORT | CCD_CAN_BIN | CCD_CAN_SUBFRAME | CCD_HAS_COOLER | CCD_HAS_SHUTTER | CCD_HAS_ST4_PORT;
-    SetCCDCapability(cap);
+    V4L2_Driver::initProperties();
 
     addConfigurationControl();
-    addDebugControl();
     return true;
 }
 
 void V4LTISCCD::ISGetProperties(const char *dev)
 {
-    INDI::CCD::ISGetProperties(dev);
+    V4L2_Driver::ISGetProperties(dev);
+}
+
+bool V4LTISCCD::ISNewSwitch(const char *dev, const char *name, ISState *states, char *names[], int n)
+{
+    return V4L2_Driver::ISNewSwitch(dev, name, states, names, n);
+}
+
+bool V4LTISCCD::ISNewText(const char *dev, const char *name, char *texts[], char *names[], int n)
+{
+    return V4L2_Driver::ISNewText(dev, name, texts, names, n);
+}
+
+bool V4LTISCCD::ISNewNumber(const char *dev, const char *name, double values[], char *names[], int n)
+{
+    return V4L2_Driver::ISNewNumber(dev, name, values, names, n);
 }
 
 bool V4LTISCCD::updateProperties()
 {
-    INDI::CCD::updateProperties();
+    V4L2_Driver::updateProperties();
 
     if (isConnected())
     {
@@ -358,209 +324,209 @@ bool V4LTISCCD::setupParams()
     return true;
 }
 
-int V4LTISCCD::SetTemperature(double temperature)
-{
-    // If there difference, for example, is less than 0.1 degrees, let's immediately return OK.
-    if (fabs(temperature - TemperatureN[0].value) < TEMP_THRESHOLD)
-        return 1;
+// int V4LTISCCD::SetTemperature(double temperature)
+// {
+//     // If there difference, for example, is less than 0.1 degrees, let's immediately return OK.
+//     if (fabs(temperature - TemperatureN[0].value) < TEMP_THRESHOLD)
+//         return 1;
+// 
+//     /**********************************************************
+//      *
+//      *  IMPORRANT: Put here your CCD Set Temperature Function
+//      *  We return 0 if setting the temperature will take some time
+//      *  If the requested is the same as current temperature, or very
+//      *  close, we return 1 and INDI::CCD will mark the temperature status as OK
+//      *  If we return 0, INDI::CCD will mark the temperature status as BUSY
+//      **********************************************************/
+// 
+//     // Otherwise, we set the temperature request and we update the status in TimerHit() function.
+//     TemperatureRequest = temperature;
+//     LOGF_INFO("Setting CCD temperature to %+06.2f C", temperature);
+//     return 0;
+// }
 
-    /**********************************************************
-     *
-     *  IMPORRANT: Put here your CCD Set Temperature Function
-     *  We return 0 if setting the temperature will take some time
-     *  If the requested is the same as current temperature, or very
-     *  close, we return 1 and INDI::CCD will mark the temperature status as OK
-     *  If we return 0, INDI::CCD will mark the temperature status as BUSY
-     **********************************************************/
+// bool V4LTISCCD::StartExposure(float duration)
+// {
+//     if (duration < minDuration)
+//     {
+//         DEBUGF(INDI::Logger::DBG_WARNING,
+//                "Exposure shorter than minimum duration %g s requested. \n Setting exposure time to %g s.", duration,
+//                minDuration);
+//         duration = minDuration;
+//     }
+// 
+//     if (imageFrameType == INDI::CCDChip::BIAS_FRAME)
+//     {
+//         duration = minDuration;
+//         LOGF_INFO("Bias Frame (s) : %g\n", minDuration);
+//     }
+// 
+//     /**********************************************************
+//    *
+//    *
+//    *
+//    *  IMPORRANT: Put here your CCD start exposure here
+//    *  Please note that duration passed is in seconds.
+//    *  If there is an error, report it back to client
+//    *  e.g.
+//    *  LOG_INFO( "Error, unable to start exposure due to ...");
+//    *  return -1;
+//    *
+//    *
+//    **********************************************************/
+// 
+//     PrimaryCCD.setExposureDuration(duration);
+//     ExposureRequest = duration;
+// 
+//     gettimeofday(&ExpStart, nullptr);
+//     LOGF_INFO("Taking a %g seconds frame...", ExposureRequest);
+// 
+//     InExposure = true;
+// 
+//     return true;
+// }
 
-    // Otherwise, we set the temperature request and we update the status in TimerHit() function.
-    TemperatureRequest = temperature;
-    LOGF_INFO("Setting CCD temperature to %+06.2f C", temperature);
-    return 0;
-}
+// bool V4LTISCCD::AbortExposure()
+// {
+//     /**********************************************************
+//    *
+//    *
+//    *
+//    *  IMPORRANT: Put here your CCD abort exposure here
+//    *  If there is an error, report it back to client
+//    *  e.g.
+//    *  LOG_INFO( "Error, unable to abort exposure due to ...");
+//    *  return false;
+//    *
+//    *
+//    **********************************************************/
+// 
+//     InExposure = false;
+//     return true;
+// }
 
-bool V4LTISCCD::StartExposure(float duration)
-{
-    if (duration < minDuration)
-    {
-        DEBUGF(INDI::Logger::DBG_WARNING,
-               "Exposure shorter than minimum duration %g s requested. \n Setting exposure time to %g s.", duration,
-               minDuration);
-        duration = minDuration;
-    }
+// bool V4LTISCCD::UpdateCCDFrameType(INDI::CCDChip::CCD_FRAME fType)
+// {
+//     INDI::CCDChip::CCD_FRAME imageFrameType = PrimaryCCD.getFrameType();
+// 
+//     if (fType == imageFrameType)
+//         return true;
+// 
+//     switch (imageFrameType)
+//     {
+//         case INDI::CCDChip::BIAS_FRAME:
+//         case INDI::CCDChip::DARK_FRAME:
+//             /**********************************************************
+//      *
+//      *
+//      *
+//      *  IMPORRANT: Put here your CCD Frame type here
+//      *  BIAS and DARK are taken with shutter closed, so _usually_
+//      *  most CCD this is a call to let the CCD know next exposure shutter
+//      *  must be closed. Customize as appropiate for the hardware
+//      *  If there is an error, report it back to client
+//      *  e.g.
+//      *  LOG_INFO( "Error, unable to set frame type to ...");
+//      *  return false;
+//      *
+//      *
+//      **********************************************************/
+//             break;
+// 
+//         case INDI::CCDChip::LIGHT_FRAME:
+//         case INDI::CCDChip::FLAT_FRAME:
+//             /**********************************************************
+//      *
+//      *
+//      *
+//      *  IMPORRANT: Put here your CCD Frame type here
+//      *  LIGHT and FLAT are taken with shutter open, so _usually_
+//      *  most CCD this is a call to let the CCD know next exposure shutter
+//      *  must be open. Customize as appropiate for the hardware
+//      *  If there is an error, report it back to client
+//      *  e.g.
+//      *  LOG_INFO( "Error, unable to set frame type to ...");
+//      *  return false;
+//      *
+//      *
+//      **********************************************************/
+//             break;
+//     }
+// 
+//     PrimaryCCD.setFrameType(fType);
+// 
+//     return true;
+// }
 
-    if (imageFrameType == INDI::CCDChip::BIAS_FRAME)
-    {
-        duration = minDuration;
-        LOGF_INFO("Bias Frame (s) : %g\n", minDuration);
-    }
+// bool V4LTISCCD::UpdateCCDFrame(int x, int y, int w, int h)
+// {
+//     /* Add the X and Y offsets */
+//     long x_1 = x;
+//     long y_1 = y;
+// 
+//     long bin_width  = x_1 + (w / PrimaryCCD.getBinX());
+//     long bin_height = y_1 + (h / PrimaryCCD.getBinY());
+// 
+//     if (bin_width > PrimaryCCD.getXRes() / PrimaryCCD.getBinX())
+//     {
+//         LOGF_INFO("Error: invalid width requested %d", w);
+//         return false;
+//     }
+//     else if (bin_height > PrimaryCCD.getYRes() / PrimaryCCD.getBinY())
+//     {
+//         LOGF_INFO("Error: invalid height request %d", h);
+//         return false;
+//     }
+// 
+//     /**********************************************************
+//    *
+//    *
+//    *
+//    *  IMPORRANT: Put here your CCD Frame dimension call
+//    *  The values calculated above are BINNED width and height
+//    *  which is what most CCD APIs require, but in case your
+//    *  CCD API implementation is different, don't forget to change
+//    *  the above calculations.
+//    *  If there is an error, report it back to client
+//    *  e.g.
+//    *  LOG_INFO( "Error, unable to set frame to ...");
+//    *  return false;
+//    *
+//    *
+//    **********************************************************/
+// 
+//     // Set UNBINNED coords
+//     PrimaryCCD.setFrame(x_1, y_1, w, h);
+// 
+//     int nbuf;
+//     nbuf = (bin_width * bin_height * PrimaryCCD.getBPP() / 8); //  this is pixel count
+//     nbuf += 512;                                               //  leave a little extra at the end
+//     PrimaryCCD.setFrameBufferSize(nbuf);
+// 
+//     LOGF_DEBUG("Setting frame buffer size to %d bytes.", nbuf);
+// 
+//     return true;
+// }
 
-    /**********************************************************
-   *
-   *
-   *
-   *  IMPORRANT: Put here your CCD start exposure here
-   *  Please note that duration passed is in seconds.
-   *  If there is an error, report it back to client
-   *  e.g.
-   *  LOG_INFO( "Error, unable to start exposure due to ...");
-   *  return -1;
-   *
-   *
-   **********************************************************/
-
-    PrimaryCCD.setExposureDuration(duration);
-    ExposureRequest = duration;
-
-    gettimeofday(&ExpStart, nullptr);
-    LOGF_INFO("Taking a %g seconds frame...", ExposureRequest);
-
-    InExposure = true;
-
-    return true;
-}
-
-bool V4LTISCCD::AbortExposure()
-{
-    /**********************************************************
-   *
-   *
-   *
-   *  IMPORRANT: Put here your CCD abort exposure here
-   *  If there is an error, report it back to client
-   *  e.g.
-   *  LOG_INFO( "Error, unable to abort exposure due to ...");
-   *  return false;
-   *
-   *
-   **********************************************************/
-
-    InExposure = false;
-    return true;
-}
-
-bool V4LTISCCD::UpdateCCDFrameType(INDI::CCDChip::CCD_FRAME fType)
-{
-    INDI::CCDChip::CCD_FRAME imageFrameType = PrimaryCCD.getFrameType();
-
-    if (fType == imageFrameType)
-        return true;
-
-    switch (imageFrameType)
-    {
-        case INDI::CCDChip::BIAS_FRAME:
-        case INDI::CCDChip::DARK_FRAME:
-            /**********************************************************
-     *
-     *
-     *
-     *  IMPORRANT: Put here your CCD Frame type here
-     *  BIAS and DARK are taken with shutter closed, so _usually_
-     *  most CCD this is a call to let the CCD know next exposure shutter
-     *  must be closed. Customize as appropiate for the hardware
-     *  If there is an error, report it back to client
-     *  e.g.
-     *  LOG_INFO( "Error, unable to set frame type to ...");
-     *  return false;
-     *
-     *
-     **********************************************************/
-            break;
-
-        case INDI::CCDChip::LIGHT_FRAME:
-        case INDI::CCDChip::FLAT_FRAME:
-            /**********************************************************
-     *
-     *
-     *
-     *  IMPORRANT: Put here your CCD Frame type here
-     *  LIGHT and FLAT are taken with shutter open, so _usually_
-     *  most CCD this is a call to let the CCD know next exposure shutter
-     *  must be open. Customize as appropiate for the hardware
-     *  If there is an error, report it back to client
-     *  e.g.
-     *  LOG_INFO( "Error, unable to set frame type to ...");
-     *  return false;
-     *
-     *
-     **********************************************************/
-            break;
-    }
-
-    PrimaryCCD.setFrameType(fType);
-
-    return true;
-}
-
-bool V4LTISCCD::UpdateCCDFrame(int x, int y, int w, int h)
-{
-    /* Add the X and Y offsets */
-    long x_1 = x;
-    long y_1 = y;
-
-    long bin_width  = x_1 + (w / PrimaryCCD.getBinX());
-    long bin_height = y_1 + (h / PrimaryCCD.getBinY());
-
-    if (bin_width > PrimaryCCD.getXRes() / PrimaryCCD.getBinX())
-    {
-        LOGF_INFO("Error: invalid width requested %d", w);
-        return false;
-    }
-    else if (bin_height > PrimaryCCD.getYRes() / PrimaryCCD.getBinY())
-    {
-        LOGF_INFO("Error: invalid height request %d", h);
-        return false;
-    }
-
-    /**********************************************************
-   *
-   *
-   *
-   *  IMPORRANT: Put here your CCD Frame dimension call
-   *  The values calculated above are BINNED width and height
-   *  which is what most CCD APIs require, but in case your
-   *  CCD API implementation is different, don't forget to change
-   *  the above calculations.
-   *  If there is an error, report it back to client
-   *  e.g.
-   *  LOG_INFO( "Error, unable to set frame to ...");
-   *  return false;
-   *
-   *
-   **********************************************************/
-
-    // Set UNBINNED coords
-    PrimaryCCD.setFrame(x_1, y_1, w, h);
-
-    int nbuf;
-    nbuf = (bin_width * bin_height * PrimaryCCD.getBPP() / 8); //  this is pixel count
-    nbuf += 512;                                               //  leave a little extra at the end
-    PrimaryCCD.setFrameBufferSize(nbuf);
-
-    LOGF_DEBUG("Setting frame buffer size to %d bytes.", nbuf);
-
-    return true;
-}
-
-bool V4LTISCCD::UpdateCCDBin(int binx, int biny)
-{
-    /**********************************************************
-   *
-   *
-   *
-   *  IMPORRANT: Put here your CCD Binning call
-   *  If there is an error, report it back to client
-   *  e.g.
-   *  LOG_INFO( "Error, unable to set binning to ...");
-   *  return false;
-   *
-   *
-   **********************************************************/
-
-    PrimaryCCD.setBin(binx, biny);
-
-    return UpdateCCDFrame(PrimaryCCD.getSubX(), PrimaryCCD.getSubY(), PrimaryCCD.getSubW(), PrimaryCCD.getSubH());
-}
+// bool V4LTISCCD::UpdateCCDBin(int binx, int biny)
+// {
+//     /**********************************************************
+//    *
+//    *
+//    *
+//    *  IMPORRANT: Put here your CCD Binning call
+//    *  If there is an error, report it back to client
+//    *  e.g.
+//    *  LOG_INFO( "Error, unable to set binning to ...");
+//    *  return false;
+//    *
+//    *
+//    **********************************************************/
+// 
+//     PrimaryCCD.setBin(binx, biny);
+// 
+//     return UpdateCCDFrame(PrimaryCCD.getSubX(), PrimaryCCD.getSubY(), PrimaryCCD.getSubW(), PrimaryCCD.getSubH());
+// }
 
 float V4LTISCCD::CalcTimeLeft()
 {
@@ -579,244 +545,244 @@ float V4LTISCCD::CalcTimeLeft()
 
 /* Downloads the image from the CCD.
  N.B. No processing is done on the image */
-int V4LTISCCD::grabImage()
-{
-    uint8_t *image = PrimaryCCD.getFrameBuffer();
-    int width      = PrimaryCCD.getSubW() / PrimaryCCD.getBinX() * PrimaryCCD.getBPP() / 8;
-    int height     = PrimaryCCD.getSubH() / PrimaryCCD.getBinY();
-
-    /**********************************************************
-     *
-     *
-     *  IMPORRANT: Put here your CCD Get Image routine here
-     *  use the image, width, and height variables above
-     *  If there is an error, report it back to client
-     *
-     *
-     **********************************************************/
-    for (int i = 0; i < height; i++)
-        for (int j = 0; j < width; j++)
-            image[i * width + j] = rand() % 255;
-
-    LOG_INFO("Download complete.");
-
-    ExposureComplete(&PrimaryCCD);
-
-    return 0;
-}
+// int V4LTISCCD::grabImage()
+// {
+//     uint8_t *image = PrimaryCCD.getFrameBuffer();
+//     int width      = PrimaryCCD.getSubW() / PrimaryCCD.getBinX() * PrimaryCCD.getBPP() / 8;
+//     int height     = PrimaryCCD.getSubH() / PrimaryCCD.getBinY();
+// 
+//     /**********************************************************
+//      *
+//      *
+//      *  IMPORRANT: Put here your CCD Get Image routine here
+//      *  use the image, width, and height variables above
+//      *  If there is an error, report it back to client
+//      *
+//      *
+//      **********************************************************/
+//     for (int i = 0; i < height; i++)
+//         for (int j = 0; j < width; j++)
+//             image[i * width + j] = rand() % 255;
+// 
+//     LOG_INFO("Download complete.");
+// 
+//     ExposureComplete(&PrimaryCCD);
+// 
+//     return 0;
+// }
 
 void V4LTISCCD::TimerHit()
 {
-    int timerID = -1;
-    long timeleft;
-
-    if (isConnected() == false)
-        return; //  No need to reset timer if we are not connected anymore
-
-    if (InExposure)
-    {
-        timeleft = CalcTimeLeft();
-
-        if (timeleft < 1.0)
-        {
-            if (timeleft > 0.25)
-            {
-                //  a quarter of a second or more
-                //  just set a tighter timer
-                timerID = SetTimer(250);
-            }
-            else
-            {
-                if (timeleft > 0.07)
-                {
-                    //  use an even tighter timer
-                    timerID = SetTimer(50);
-                }
-                else
-                {
-                    //  it's real close now, so spin on it
-                    while (timeleft > 0)
-                    {
-                        /**********************************************************
-             *
-             *  IMPORRANT: If supported by your CCD API
-             *  Add a call here to check if the image is ready for download
-             *  If image is ready, set timeleft to 0. Some CCDs (check FLI)
-             *  also return timeleft in msec.
-             *
-             **********************************************************/
-
-                        // Breaking in simulation, in real driver either loop until time left = 0 or use an API call to know if the image is ready for download
-                        break;
-
-                        //int slv;
-                        //slv = 100000 * timeleft;
-                        //usleep(slv);
-                    }
-
-                    /* We're done exposing */
-                    LOG_INFO("Exposure done, downloading image...");
-
-                    PrimaryCCD.setExposureLeft(0);
-                    InExposure = false;
-                    /* grab and save image */
-                    grabImage();
-                }
-            }
-        }
-        else
-        {
-            if (isDebug())
-            {
-                IDLog("With time left %ld\n", timeleft);
-                IDLog("image not yet ready....\n");
-            }
-
-            PrimaryCCD.setExposureLeft(timeleft);
-        }
-    }
-
-    switch (TemperatureNP.s)
-    {
-        case IPS_IDLE:
-        case IPS_OK:
-            /**********************************************************
-     *
-     *
-     *
-     *  IMPORRANT: Put here your CCD Get temperature call here
-     *  If there is an error, report it back to client
-     *  e.g.
-     *  LOG_INFO( "Error, unable to get temp due to ...");
-     *  return false;
-     *
-     *
-     **********************************************************/
-            break;
-
-        case IPS_BUSY:
-            /**********************************************************
-       *
-       *
-       *
-       *  IMPORRANT: Put here your CCD Get temperature call here
-       *  If there is an error, report it back to client
-       *  e.g.
-       *  LOG_INFO( "Error, unable to get temp due to ...");
-       *  return false;
-       *
-       *
-       **********************************************************/
-            TemperatureN[0].value = TemperatureRequest;
-
-            // If we're within threshold, let's make it BUSY ---> OK
-            if (fabs(TemperatureRequest - TemperatureN[0].value) <= TEMP_THRESHOLD)
-                TemperatureNP.s = IPS_OK;
-
-            IDSetNumber(&TemperatureNP, nullptr);
-            break;
-
-        case IPS_ALERT:
-            break;
-    }
-
-    if (timerID == -1)
-        SetTimer(POLLMS);
+//     int timerID = -1;
+//     long timeleft;
+// 
+//     if (isConnected() == false)
+//         return; //  No need to reset timer if we are not connected anymore
+// 
+//     if (InExposure)
+//     {
+//         timeleft = CalcTimeLeft();
+// 
+//         if (timeleft < 1.0)
+//         {
+//             if (timeleft > 0.25)
+//             {
+//                 //  a quarter of a second or more
+//                 //  just set a tighter timer
+//                 timerID = SetTimer(250);
+//             }
+//             else
+//             {
+//                 if (timeleft > 0.07)
+//                 {
+//                     //  use an even tighter timer
+//                     timerID = SetTimer(50);
+//                 }
+//                 else
+//                 {
+//                     //  it's real close now, so spin on it
+//                     while (timeleft > 0)
+//                     {
+//                         /**********************************************************
+//              *
+//              *  IMPORRANT: If supported by your CCD API
+//              *  Add a call here to check if the image is ready for download
+//              *  If image is ready, set timeleft to 0. Some CCDs (check FLI)
+//              *  also return timeleft in msec.
+//              *
+//              **********************************************************/
+// 
+//                         // Breaking in simulation, in real driver either loop until time left = 0 or use an API call to know if the image is ready for download
+//                         break;
+// 
+//                         //int slv;
+//                         //slv = 100000 * timeleft;
+//                         //usleep(slv);
+//                     }
+// 
+//                     /* We're done exposing */
+//                     LOG_INFO("Exposure done, downloading image...");
+// 
+//                     PrimaryCCD.setExposureLeft(0);
+//                     InExposure = false;
+//                     /* grab and save image */
+//                     grabImage();
+//                 }
+//             }
+//         }
+//         else
+//         {
+//             if (isDebug())
+//             {
+//                 IDLog("With time left %ld\n", timeleft);
+//                 IDLog("image not yet ready....\n");
+//             }
+// 
+//             PrimaryCCD.setExposureLeft(timeleft);
+//         }
+//     }
+// 
+//     switch (TemperatureNP.s)
+//     {
+//         case IPS_IDLE:
+//         case IPS_OK:
+//             /**********************************************************
+//      *
+//      *
+//      *
+//      *  IMPORRANT: Put here your CCD Get temperature call here
+//      *  If there is an error, report it back to client
+//      *  e.g.
+//      *  LOG_INFO( "Error, unable to get temp due to ...");
+//      *  return false;
+//      *
+//      *
+//      **********************************************************/
+//             break;
+// 
+//         case IPS_BUSY:
+//             /**********************************************************
+//        *
+//        *
+//        *
+//        *  IMPORRANT: Put here your CCD Get temperature call here
+//        *  If there is an error, report it back to client
+//        *  e.g.
+//        *  LOG_INFO( "Error, unable to get temp due to ...");
+//        *  return false;
+//        *
+//        *
+//        **********************************************************/
+//             TemperatureN[0].value = TemperatureRequest;
+// 
+//             // If we're within threshold, let's make it BUSY ---> OK
+//             if (fabs(TemperatureRequest - TemperatureN[0].value) <= TEMP_THRESHOLD)
+//                 TemperatureNP.s = IPS_OK;
+// 
+//             IDSetNumber(&TemperatureNP, nullptr);
+//             break;
+// 
+//         case IPS_ALERT:
+//             break;
+//     }
+// 
+//     if (timerID == -1)
+//         SetTimer(POLLMS);
     return;
 }
 
-IPState V4LTISCCD::GuideNorth(uint32_t ms)
-{
-    INDI_UNUSED(ms);
-    /**********************************************************
-   *
-   *
-   *
-   *  IMPORRANT: Put here your CCD Guide call
-   *  Some CCD API support pulse guiding directly (i.e. without timers)
-   *  Others implement GUIDE_ON and GUIDE_OFF for each direction, and you
-   *  will have to start a timer and then stop it after the 'ms' milliseconds
-   *  For an example on timer usage, please refer to indi-sx and indi-gpusb drivers
-   *  available in INDI 3rd party repository
-   *  If there is an error, report it back to client
-   *  e.g.
-   *  LOG_INFO( "Error, unable to guide due ...");
-   *  return IPS_ALERT;
-   *
-   *
-   **********************************************************/
+// IPState V4LTISCCD::GuideNorth(uint32_t ms)
+// {
+//     INDI_UNUSED(ms);
+//     /**********************************************************
+//    *
+//    *
+//    *
+//    *  IMPORRANT: Put here your CCD Guide call
+//    *  Some CCD API support pulse guiding directly (i.e. without timers)
+//    *  Others implement GUIDE_ON and GUIDE_OFF for each direction, and you
+//    *  will have to start a timer and then stop it after the 'ms' milliseconds
+//    *  For an example on timer usage, please refer to indi-sx and indi-gpusb drivers
+//    *  available in INDI 3rd party repository
+//    *  If there is an error, report it back to client
+//    *  e.g.
+//    *  LOG_INFO( "Error, unable to guide due ...");
+//    *  return IPS_ALERT;
+//    *
+//    *
+//    **********************************************************/
+// 
+//     return IPS_OK;
+// }
 
-    return IPS_OK;
-}
+// IPState V4LTISCCD::GuideSouth(uint32_t ms)
+// {
+//     INDI_UNUSED(ms);
+//     /**********************************************************
+//      *
+//      *
+//      *
+//      *  IMPORRANT: Put here your CCD Guide call
+//      *  Some CCD API support pulse guiding directly (i.e. without timers)
+//      *  Others implement GUIDE_ON and GUIDE_OFF for each direction, and you
+//      *  will have to start a timer and then stop it after the 'ms' milliseconds
+//      *  For an example on timer usage, please refer to indi-sx and indi-gpusb drivers
+//      *  available in INDI 3rd party repository
+//      *  If there is an error, report it back to client
+//      *  e.g.
+//      *  LOG_INFO( "Error, unable to guide due ...");
+//      *  return IPS_ALERT;
+//      *
+//      *
+//      **********************************************************/
+// 
+//     return IPS_OK;
+// }
 
-IPState V4LTISCCD::GuideSouth(uint32_t ms)
-{
-    INDI_UNUSED(ms);
-    /**********************************************************
-     *
-     *
-     *
-     *  IMPORRANT: Put here your CCD Guide call
-     *  Some CCD API support pulse guiding directly (i.e. without timers)
-     *  Others implement GUIDE_ON and GUIDE_OFF for each direction, and you
-     *  will have to start a timer and then stop it after the 'ms' milliseconds
-     *  For an example on timer usage, please refer to indi-sx and indi-gpusb drivers
-     *  available in INDI 3rd party repository
-     *  If there is an error, report it back to client
-     *  e.g.
-     *  LOG_INFO( "Error, unable to guide due ...");
-     *  return IPS_ALERT;
-     *
-     *
-     **********************************************************/
+// IPState V4LTISCCD::GuideEast(uint32_t ms)
+// {
+//     INDI_UNUSED(ms);
+//     /**********************************************************
+//      *
+//      *
+//      *
+//      *  IMPORRANT: Put here your CCD Guide call
+//      *  Some CCD API support pulse guiding directly (i.e. without timers)
+//      *  Others implement GUIDE_ON and GUIDE_OFF for each direction, and you
+//      *  will have to start a timer and then stop it after the 'ms' milliseconds
+//      *  For an example on timer usage, please refer to indi-sx and indi-gpusb drivers
+//      *  available in INDI 3rd party repository
+//      *  If there is an error, report it back to client
+//      *  e.g.
+//      *  LOG_INFO( "Error, unable to guide due ...");
+//      *  return IPS_ALERT;
+//      *
+//      *
+//      **********************************************************/
+// 
+//     return IPS_OK;
+// }
 
-    return IPS_OK;
-}
-
-IPState V4LTISCCD::GuideEast(uint32_t ms)
-{
-    INDI_UNUSED(ms);
-    /**********************************************************
-     *
-     *
-     *
-     *  IMPORRANT: Put here your CCD Guide call
-     *  Some CCD API support pulse guiding directly (i.e. without timers)
-     *  Others implement GUIDE_ON and GUIDE_OFF for each direction, and you
-     *  will have to start a timer and then stop it after the 'ms' milliseconds
-     *  For an example on timer usage, please refer to indi-sx and indi-gpusb drivers
-     *  available in INDI 3rd party repository
-     *  If there is an error, report it back to client
-     *  e.g.
-     *  LOG_INFO( "Error, unable to guide due ...");
-     *  return IPS_ALERT;
-     *
-     *
-     **********************************************************/
-
-    return IPS_OK;
-}
-
-IPState V4LTISCCD::GuideWest(uint32_t ms)
-{
-    INDI_UNUSED(ms);
-    /**********************************************************
-     *
-     *
-     *
-     *  IMPORRANT: Put here your CCD Guide call
-     *  Some CCD API support pulse guiding directly (i.e. without timers)
-     *  Others implement GUIDE_ON and GUIDE_OFF for each direction, and you
-     *  will have to start a timer and then stop it after the 'ms' milliseconds
-     *  For an example on timer usage, please refer to indi-sx and indi-gpusb drivers
-     *  available in INDI 3rd party repository
-     *  If there is an error, report it back to client
-     *  e.g.
-     *  LOG_INFO( "Error, unable to guide due ...");
-     *  return IPS_ALERT;
-     *
-     *
-     **********************************************************/
-
-    return IPS_OK;
-}
+// IPState V4LTISCCD::GuideWest(uint32_t ms)
+// {
+//     INDI_UNUSED(ms);
+//     /**********************************************************
+//      *
+//      *
+//      *
+//      *  IMPORRANT: Put here your CCD Guide call
+//      *  Some CCD API support pulse guiding directly (i.e. without timers)
+//      *  Others implement GUIDE_ON and GUIDE_OFF for each direction, and you
+//      *  will have to start a timer and then stop it after the 'ms' milliseconds
+//      *  For an example on timer usage, please refer to indi-sx and indi-gpusb drivers
+//      *  available in INDI 3rd party repository
+//      *  If there is an error, report it back to client
+//      *  e.g.
+//      *  LOG_INFO( "Error, unable to guide due ...");
+//      *  return IPS_ALERT;
+//      *
+//      *
+//      **********************************************************/
+// 
+//     return IPS_OK;
+// }

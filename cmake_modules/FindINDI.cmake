@@ -149,6 +149,7 @@ INDI_declare_component(align   indiAlignmentDriver)
 INDI_declare_component(client  indiclient)
 INDI_declare_component(clientqt5 indiclientqt5)
 INDI_declare_component(lx200  indilx200)
+INDI_declare_component(v4l  indiv4l)
 
 ########## Public ##########
 set(${INDI_PUBLIC_VAR_NS}_FOUND TRUE)

@@ -28,48 +28,49 @@
 #include <v4l2driver.h>
 #include <iostream>
 
+#define TRIGGER_TAB     "Trigger Control"
+#define STROBE_TAB      "Strobe Control"
+
 using namespace std;
 
-#define DEVICE struct usb_device *
 
 class V4LTISCCD : public V4L2_Driver
 {
   public:
-    V4LTISCCD(std::string name, std::string serial);
+    V4LTISCCD();
     virtual ~V4LTISCCD();
 
     const char *getDefaultName();
 
     bool initProperties();
     void ISGetProperties(const char *dev);
+    virtual bool ISNewSwitch(const char *dev, const char *name, ISState *states, char *names[], int n);
+    virtual bool ISNewText(const char *dev, const char *name, char *texts[], char *names[], int n);
+    virtual bool ISNewNumber(const char *dev, const char *name, double values[], char *names[], int n);
     bool updateProperties();
 
     bool Connect();
     bool Disconnect();
 
-    int SetTemperature(double temperature);
-    bool StartExposure(float duration);
-    bool AbortExposure();
+//     int SetTemperature(double temperature);
+//     bool StartExposure(float duration);
+//     bool AbortExposure();
 
   protected:
     void TimerHit();
-    virtual bool UpdateCCDFrame(int x, int y, int w, int h);
-    virtual bool UpdateCCDBin(int binx, int biny);
-    virtual bool UpdateCCDFrameType(INDI::CCDChip::CCD_FRAME fType);
+//     virtual bool UpdateCCDFrame(int x, int y, int w, int h);
+//     virtual bool UpdateCCDBin(int binx, int biny);
+//     virtual bool UpdateCCDFrameType(INDI::CCDChip::CCD_FRAME fType);
 
     // Guide Port
-    virtual IPState GuideNorth(uint32_t ms);
-    virtual IPState GuideSouth(uint32_t ms);
-    virtual IPState GuideEast(uint32_t ms);
-    virtual IPState GuideWest(uint32_t ms);
+//     virtual IPState GuideNorth(uint32_t ms);
+//     virtual IPState GuideSouth(uint32_t ms);
+//     virtual IPState GuideEast(uint32_t ms);
+//     virtual IPState GuideWest(uint32_t ms);
 
   private:
 
-    // SerialNumber
-    IText SerialNumberS[1] = {};
-    ITextVectorProperty SerialNumberSP;
-
-    DEVICE device;
+//     DEVICE device;
     char name[32];
 
     double ccdTemp;
@@ -86,7 +87,7 @@ class V4LTISCCD : public V4L2_Driver
     float TemperatureRequest;
 
     float CalcTimeLeft();
-    int grabImage();
+//     int grabImage();
     bool setupParams();
     bool sim;
 
